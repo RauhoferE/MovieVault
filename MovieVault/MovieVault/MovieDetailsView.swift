@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 import SwiftData
 import WebKit
+import AVKit
 
 @MainActor
 class MovieDetailViewModel: ObservableObject {
@@ -53,6 +54,7 @@ struct MovieDetailView: View {
     @Environment(\.modelContext) private var modelContext
         @Query private var favorites: [FavoriteMovie]
     @StateObject private var viewModel = MovieDetailViewModel()
+    @State private var demoPlayer = AVPlayer(url: URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!)
     
     private var isFavorite: Bool {
             favorites.contains { $0.id == movieId }
@@ -154,6 +156,14 @@ struct MovieDetailView: View {
                          .aspectRatio(16/9, contentMode: .fit)
                          .clipShape(RoundedRectangle(cornerRadius: 8))
                  }
+                 
+                 Text("AVKit Demo")
+                         .font(.headline)
+                         .padding(.top, 8)
+                 
+                 VideoPlayer(player: demoPlayer)
+                     .aspectRatio(16/9, contentMode: .fit)
+                     .clipShape(RoundedRectangle(cornerRadius: 8))
              }
              .padding(.horizontal)
              .padding(.bottom)
