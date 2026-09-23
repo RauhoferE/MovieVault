@@ -100,3 +100,15 @@ struct DateFormatted: Decodable {
         self.wrappedValue = date
     }
 }
+
+struct MovieVideosResponse: Decodable {
+    let id: Int
+    let results: [Video]
+
+    struct Video: Decodable {
+        let key: String
+        let site: String
+        let type: String
+        let official: Bool
+    }
+}

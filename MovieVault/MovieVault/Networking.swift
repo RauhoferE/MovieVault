@@ -118,6 +118,40 @@ class NetworkManager {
         }
     }
     
+    func getMovieTrailerInformation(id: Int) async throws -> MovieVideosResponse{
+        guard let url = URL(string: "https://api.themoviedb.org/3/movie/\(id)/videos") else {
+            
+            throw APIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIKEY)", forHTTPHeaderField: "Authorization")
+        
+        let data: Data
+        let response: URLResponse
+        
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let urlError as URLError where urlError.code == .notConnectedToInternet {
+            throw APIError.networkError
+        } catch {
+            throw APIError.unknownError
+        }
+        
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode){
+            throw APIError.invalidResponse
+        }
+        
+        do{
+            let docRes = try JSONDecoder().decode(MovieVideosResponse.self, from: data)
+            return docRes
+        }catch {
+            throw APIError.serilizationError
+        }
+    }
+    
 
 
 }
