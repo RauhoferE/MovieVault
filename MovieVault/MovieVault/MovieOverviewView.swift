@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 @MainActor
 class MovieListViewModel: ObservableObject {
@@ -17,35 +18,34 @@ class MovieListViewModel: ObservableObject {
     private var totalPages = 1
     private var canLoadMore: Bool { currentPage < totalPages }
 
-    func loadInitial() async {
+    func loadInitial(networkManager: NetworkManager) async {
         guard movies.isEmpty else { return }
-        await loadNextPage()
+        await loadNextPage(networkManager: networkManager)
     }
 
-    func loadNextPageIfNeeded(currentItem movie: MoviesResponse.Movie) async {
-        // Trigger when the user is a few items from the end, not just the last one
+    func loadNextPageIfNeeded(currentItem movie: MoviesResponse.Movie, networkManager: NetworkManager) async {
         let thresholdIndex = movies.index(movies.endIndex, offsetBy: -5, limitedBy: movies.startIndex) ?? movies.startIndex
         guard let itemIndex = movies.firstIndex(where: { $0.id == movie.id }),
               itemIndex >= thresholdIndex else { return }
 
-        await loadNextPage()
+        await loadNextPage(networkManager: networkManager)
     }
 
-    func refresh() async {
+    func refresh(networkManager: NetworkManager) async {
         currentPage = 0
         totalPages = 1
         movies = []
-        await loadNextPage()
+        await loadNextPage(networkManager: networkManager)
     }
 
-    private func loadNextPage() async {
+    private func loadNextPage(networkManager: NetworkManager) async {
         guard !isLoading, canLoadMore else { return }
         isLoading = true
         errorMessage = nil
 
         do {
             let nextPage = currentPage + 1
-            let response = try await fetchMovies(page: nextPage)
+            let response: MoviesResponse = try await networkManager.getMovies(page: nextPage)
 
             currentPage = response.page
             totalPages = response.total_pages
@@ -59,6 +59,7 @@ class MovieListViewModel: ObservableObject {
 }
 
 struct MovieOverviewView: View {
+    @Environment(\.networkManager) private var networkManager
     @StateObject private var viewModel = MovieListViewModel()
 
     var body: some View {
@@ -66,7 +67,7 @@ struct MovieOverviewView: View {
             ForEach(viewModel.movies, id: \.id) { movie in
                 MovieRow(movie: movie)
                     .task {
-                        await viewModel.loadNextPageIfNeeded(currentItem: movie)
+                        await viewModel.loadNextPageIfNeeded(currentItem: movie, networkManager: networkManager)
                     }
             }
 
@@ -82,15 +83,15 @@ struct MovieOverviewView: View {
         }
         .listStyle(.plain)
         .refreshable {
-            await viewModel.refresh()
+            await viewModel.refresh(networkManager: networkManager)
         }
         .task {
-            await viewModel.loadInitial()
+            await viewModel.loadInitial(networkManager: networkManager)
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
-            Text(viewModel.errorMessage ?? "")
+            Text(viewModel.errorMessage ?? "Undefined error happened")
         }
     }
 }
