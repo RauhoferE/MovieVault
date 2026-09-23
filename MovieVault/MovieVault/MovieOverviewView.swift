@@ -69,42 +69,45 @@ struct MovieOverviewView: View {
         }
 
     var body: some View {
-        List {
-            ForEach(viewModel.movies, id: \.id) { movie in
-                NavigationLink(value: movie.id) {
-                    MovieRow(movie: movie, isFavorite: favoriteIds.contains(movie.id))
-                                    }
-                    .task {
-                        await viewModel.loadNextPageIfNeeded(currentItem: movie, networkManager: networkManager)
-                    }
-            }
-
-            if viewModel.isLoading {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+        NavigationStack{
+            List {
+                ForEach(viewModel.movies, id: \.id) { movie in
+                    NavigationLink(value: movie.id) {
+                        MovieRow(movie: movie, isFavorite: favoriteIds.contains(movie.id))
+                                        }
+                        .task {
+                            await viewModel.loadNextPageIfNeeded(currentItem: movie, networkManager: networkManager)
+                        }
                 }
-                .padding()
-                .listRowSeparator(.hidden)
+
+                if viewModel.isLoading {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .padding()
+                    .listRowSeparator(.hidden)
+                }
+            }
+            .listStyle(.plain)
+            .refreshable {
+                await viewModel.refresh(networkManager: networkManager)
+            }
+            .task {
+                await viewModel.loadInitial(networkManager: networkManager)
+            }
+            .navigationDestination(for: Int.self){ movieId in
+                MovieDetailView(movieId: movieId)
+                
+            }
+            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: {
+                Text(viewModel.errorMessage ?? "Undefined error happened")
             }
         }
-        .listStyle(.plain)
-        .refreshable {
-            await viewModel.refresh(networkManager: networkManager)
-        }
-        .task {
-            await viewModel.loadInitial(networkManager: networkManager)
-        }
-        .navigationDestination(for: Int.self){ movieId in
-            MovieDetailView(movieId: movieId)
-            
-        }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") { viewModel.errorMessage = nil }
-        } message: {
-            Text(viewModel.errorMessage ?? "Undefined error happened")
-        }
+        
     }
 }
 

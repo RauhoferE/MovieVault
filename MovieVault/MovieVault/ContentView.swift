@@ -12,10 +12,24 @@ struct ContentView: View {
     @State private var networkManager = NetworkManager()
 
     var body: some View {
-        NavigationStack {
-            MovieOverviewView()
-                .toolbar(.hidden, for: .navigationBar)
-                .environment(\.networkManager, networkManager)
-        }
+        
+            TabView {
+                        MovieOverviewView()
+                            .tabItem {
+                                Label("Movies", systemImage: "film")
+                            }
+                            .toolbar(.hidden, for: .navigationBar)
+                            .environment(\.networkManager, networkManager)
+
+                        FavoritesView()
+                            .tabItem {
+                                Label("Favorites", systemImage: "heart.fill")
+                            }
+                            .toolbar(.hidden, for: .navigationBar)
+                            .environment(\.networkManager, networkManager)
+                    }
+            
+                
+        
     }
 }
