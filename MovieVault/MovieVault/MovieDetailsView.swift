@@ -8,10 +8,12 @@
 import SwiftUI
 import Combine
 import SwiftData
+import WebKit
 
 @MainActor
 class MovieDetailViewModel: ObservableObject {
     @Published var details: MovieDetails?
+    @Published var video: Video?
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -21,11 +23,26 @@ class MovieDetailViewModel: ObservableObject {
 
         do {
             details = try await networkManager.getMovieDetails(id: movieId)
+            let videos = try await networkManager.getMovieTrailerInformation(id: movieId)
+            video = videos.results.first(where: { VideoType(rawValue: $0.type) == .trailer && VideoSite(rawValue: $0.site) == .youtube })
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+    }
+}
+
+struct YoutubePlayerView: UIViewRepresentable {
+    let videoKey: String
+
+    func makeUIView(context: Context) -> WKWebView {
+        WKWebView()
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        guard let url = URL(string: "https://www.youtube.com/embed/\(videoKey)") else { return }
+        webView.load(URLRequest(url: url))
     }
 }
 
@@ -45,6 +62,7 @@ struct MovieDetailView: View {
         ScrollView {
             if let details = viewModel.details {
                 content(for: details)
+                
             } else if viewModel.isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 300)
@@ -126,6 +144,15 @@ struct MovieDetailView: View {
                      Text(details.overview)
                          .font(.body)
                          .foregroundColor(.secondary)
+                 }
+                 if let trailerKey = viewModel.video {
+                     Text("Trailer")
+                         .font(.headline)
+                         .padding(.top, 8)
+
+                     YoutubePlayerView(videoKey: trailerKey.key)
+                         .aspectRatio(16/9, contentMode: .fit)
+                         .clipShape(RoundedRectangle(cornerRadius: 8))
                  }
              }
              .padding(.horizontal)

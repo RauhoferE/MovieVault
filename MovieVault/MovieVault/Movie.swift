@@ -105,10 +105,22 @@ struct MovieVideosResponse: Decodable {
     let id: Int
     let results: [Video]
 
-    struct Video: Decodable {
-        let key: String
-        let site: String
-        let type: String
-        let official: Bool
-    }
+    
+}
+
+struct Video: Decodable {
+    let key: String
+    let site: String
+    let type: String
+    let official: Bool
+}
+
+enum VideoType: String{
+    case trailer = "Trailer"
+    case teaser = "Teaser"
+}
+
+enum VideoSite: String{
+    case youtube = "YouTube"
+    case vimeo = "Vimeo"
 }
