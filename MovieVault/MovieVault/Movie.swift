@@ -57,20 +57,20 @@ nonisolated struct MovieDetails: Decodable{
     let vote_average: Double
     let vote_count: Int
 
-    struct Genre: Decodable{
+    struct Genre: Codable{
         let id: Int
         let name: String
     }
-    struct ProductionCompany: Decodable{
+    struct ProductionCompany: Codable{
         let id: Int
         let name: String
         let origin_country: String
     }
-    struct ProductionCountry: Decodable{
+    struct ProductionCountry: Codable{
         let iso_3166_1: String
         let name: String
     }
-    struct SpokenLanguage: Decodable{
+    struct SpokenLanguage: Codable{
         let iso_639_1: String
         let name: String
         let english_name: String

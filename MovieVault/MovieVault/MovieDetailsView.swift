@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import SwiftData
 
 @MainActor
 class MovieDetailViewModel: ObservableObject {
@@ -32,7 +33,13 @@ struct MovieDetailView: View {
     let movieId: Int
 
     @Environment(\.networkManager) private var networkManager
+    @Environment(\.modelContext) private var modelContext
+        @Query private var favorites: [FavoriteMovie]
     @StateObject private var viewModel = MovieDetailViewModel()
+    
+    private var isFavorite: Bool {
+            favorites.contains { $0.id == movieId }
+        }
 
     var body: some View {
         ScrollView {
@@ -47,10 +54,31 @@ struct MovieDetailView: View {
         .task {
             await viewModel.load(movieId: movieId, networkManager: networkManager)
         }
+        .toolbar {
+                    if let details = viewModel.details {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                toggleFavorite(details: details)
+                            } label: {
+                                Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                    .foregroundColor(isFavorite ? .red : .primary)
+                            }
+                        }
+                    }
+                }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+    }
+    
+    private func toggleFavorite(details: MovieDetails) {
+        if let existing = favorites.first(where: { $0.id == movieId }) {
+            modelContext.delete(existing)
+        } else {
+            let favorite = FavoriteMovie(from: details)
+            modelContext.insert(favorite)
         }
     }
 

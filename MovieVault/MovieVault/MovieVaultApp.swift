@@ -26,7 +26,8 @@ struct MovieVaultApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-        }
+                
+        }.modelContainer(for: FavoriteMovie.self)
         //.modelContainer(sharedModelContainer)
     }
 }
