@@ -65,7 +65,9 @@ struct MovieOverviewView: View {
     var body: some View {
         List {
             ForEach(viewModel.movies, id: \.id) { movie in
-                MovieRow(movie: movie)
+                NavigationLink(value: movie.id) {
+                                        MovieRow(movie: movie)
+                                    }
                     .task {
                         await viewModel.loadNextPageIfNeeded(currentItem: movie, networkManager: networkManager)
                     }
@@ -87,6 +89,10 @@ struct MovieOverviewView: View {
         }
         .task {
             await viewModel.loadInitial(networkManager: networkManager)
+        }
+        .navigationDestination(for: Int.self){ movieId in
+            MovieDetailView(movieId: movieId)
+            
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }

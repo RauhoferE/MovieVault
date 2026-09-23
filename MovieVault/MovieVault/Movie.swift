@@ -63,7 +63,6 @@ nonisolated struct MovieDetails: Decodable{
     }
     struct ProductionCompany: Decodable{
         let id: Int
-        let logo_path: String
         let name: String
         let origin_country: String
     }
