@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import SwiftData
 
 @MainActor
 class MovieListViewModel: ObservableObject {
@@ -61,12 +62,17 @@ class MovieListViewModel: ObservableObject {
 struct MovieOverviewView: View {
     @Environment(\.networkManager) private var networkManager
     @StateObject private var viewModel = MovieListViewModel()
+    @Query private var favorites: [FavoriteMovie]
+
+        private var favoriteIds: Set<Int> {
+            Set(favorites.map { $0.id })
+        }
 
     var body: some View {
         List {
             ForEach(viewModel.movies, id: \.id) { movie in
                 NavigationLink(value: movie.id) {
-                                        MovieRow(movie: movie)
+                    MovieRow(movie: movie, isFavorite: favoriteIds.contains(movie.id))
                                     }
                     .task {
                         await viewModel.loadNextPageIfNeeded(currentItem: movie, networkManager: networkManager)
@@ -104,6 +110,7 @@ struct MovieOverviewView: View {
 
 struct MovieRow: View {
     let movie: MoviesResponse.Movie
+    let isFavorite: Bool
 
     private var posterURL: URL? {
         URL(string: "https://image.tmdb.org/t/p/w200\(movie.poster_path)")
@@ -135,9 +142,17 @@ struct MovieRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(movie.title)
-                    .font(.headline)
-                    .lineLimit(2)
+                HStack {
+                    Text(movie.title)
+                        .font(.headline)
+                        .lineLimit(2)
+
+                    if isFavorite {
+                        Image(systemName: "heart.fill")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                }
 
                 Text(year)
                     .font(.subheadline)
