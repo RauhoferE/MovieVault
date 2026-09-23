@@ -24,7 +24,7 @@ nonisolated struct MoviesResponse: Decodable{
         let media_type: String
         let genre_ids: [Int]
         let popularity: Double
-        let release_date: String
+        @DateFormatted var release_date: Date
         let video: Bool
         let vote_average: Double
         let vote_count: Int
@@ -46,7 +46,7 @@ nonisolated struct MovieDetails: Decodable{
     let poster_path: String
     let production_companies: [ProductionCompany]
     let production_countries: [ProductionCountry]
-    let release_date: String
+    @DateFormatted var release_date: Date
     let revenue: Int
     let runtime: Int
     let spoken_languages: [SpokenLanguage]
@@ -77,4 +77,27 @@ nonisolated struct MovieDetails: Decodable{
         let english_name: String
     }
 
+}
+
+@propertyWrapper
+struct DateFormatted: Decodable {
+    let wrappedValue: Date
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let dateString = try container.decode(String.self)
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        guard let date = formatter.date(from: dateString) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Date string \(dateString) does not match format yyyy-MM-dd"
+            )
+        }
+        self.wrappedValue = date
+    }
 }
