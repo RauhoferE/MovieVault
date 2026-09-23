@@ -1,5 +1,5 @@
 //
-//  Secrets.xcconfig
+//  Config.xcconfig
 //  MovieVault
 //
 //  Created by emre on 23.09.26.
@@ -7,4 +7,3 @@
 
 // Configuration settings file format documentation can be found at:
 // https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
-TMDB_API_KEY="asdas"
