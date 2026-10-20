@@ -15,6 +15,7 @@ import AVKit
 class MovieDetailViewModel: ObservableObject {
     @Published var details: MovieDetails?
     @Published var video: Video?
+    @Published var recommendations: [MovieRecommendationsResponse.RecommendedMovie] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -26,6 +27,9 @@ class MovieDetailViewModel: ObservableObject {
             details = try await networkManager.getMovieDetails(id: movieId)
             let videos = try await networkManager.getMovieTrailerInformation(id: movieId)
             video = videos.results.first(where: { VideoType(rawValue: $0.type) == .trailer && VideoSite(rawValue: $0.site) == .youtube })
+            // Recommendations are a nice-to-have, so a failure here shouldn't show an error
+            let recommended = try? await networkManager.getMovieRecommendations(id: movieId)
+            recommendations = Array(recommended?.results.prefix(5) ?? [])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -55,7 +59,7 @@ struct MovieDetailView: View {
         @Query private var favorites: [FavoriteMovie]
     @StateObject private var viewModel = MovieDetailViewModel()
     @State private var demoPlayer = AVPlayer(url: URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!)
-    
+
     private var isFavorite: Bool {
             favorites.contains { $0.id == movieId }
         }
@@ -64,7 +68,7 @@ struct MovieDetailView: View {
         ScrollView {
             if let details = viewModel.details {
                 content(for: details)
-                
+
             } else if viewModel.isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 300)
@@ -92,7 +96,7 @@ struct MovieDetailView: View {
             Text(viewModel.errorMessage ?? "")
         }
     }
-    
+
     private func toggleFavorite(details: MovieDetails) {
         if let existing = favorites.first(where: { $0.id == movieId }) {
             modelContext.delete(existing)
@@ -156,14 +160,23 @@ struct MovieDetailView: View {
                          .aspectRatio(16/9, contentMode: .fit)
                          .clipShape(RoundedRectangle(cornerRadius: 8))
                  }
-                 
+
                  Text("AVKit Demo")
                          .font(.headline)
                          .padding(.top, 8)
-                 
+
                  VideoPlayer(player: demoPlayer)
                      .aspectRatio(16/9, contentMode: .fit)
                      .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                 if !viewModel.recommendations.isEmpty {
+                     Text("If you like this you might also like:")
+                         .font(.headline)
+                         .padding(.top, 8)
+
+
+                     recommendationsRow
+                 }
              }
              .padding(.horizontal)
              .padding(.bottom)
@@ -209,6 +222,41 @@ struct MovieDetailView: View {
                         .padding(.vertical, 4)
                         .background(Color.secondary.opacity(0.15))
                         .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    private var recommendationsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(viewModel.recommendations, id: \.id) { movie in
+                    NavigationLink(value: movie.id) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            AsyncImage(url: movie.poster_path.flatMap { URL(string: "https://image.tmdb.org/t/p/w200\($0)") }) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().aspectRatio(contentMode: .fill)
+                                default:
+                                    Color.gray.opacity(0.2)
+                                        .overlay(Image(systemName: "film").foregroundColor(.gray))
+                                }
+                            }
+                            .frame(width: 100, height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            Text(movie.title)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .lineLimit(2, reservesSpace: true)
+
+                            Label(String(format: "%.1f", movie.vote_average), systemImage: "star.fill")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                        }
+                        .frame(width: 100, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
