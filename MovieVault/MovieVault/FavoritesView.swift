@@ -11,9 +11,11 @@ import SwiftData
 struct FavoritesView: View {
     @Query(sort: \FavoriteMovie.title) private var favorites: [FavoriteMovie]
     @Environment(\.modelContext) private var modelContext
+    @State private var path = NavigationPath()
+    @State private var surpriseCount = 0
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if favorites.isEmpty {
                     ContentUnavailableView(
@@ -37,7 +39,25 @@ struct FavoritesView: View {
                 MovieDetailView(movieId: movieId)
             }
             .navigationTitle("Favorites")
+            .toolbar {
+                if !favorites.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: surpriseMe) {
+                            Label("Surprise Me", systemImage: "dice.fill")
+                        }
+                        .symbolEffect(.bounce, value: surpriseCount)
+                        .sensoryFeedback(.impact, trigger: surpriseCount)
+                    }
+                }
+            }
         }
+    }
+
+    // Picks a random favorite for movie night and opens its details
+    private func surpriseMe() {
+        guard let pick = favorites.randomElement() else { return }
+        surpriseCount += 1
+        path.append(pick.id)
     }
 
     private func deleteFavorites(at offsets: IndexSet) {
