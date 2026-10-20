@@ -128,6 +128,28 @@ nonisolated struct MovieRecommendationsResponse: Decodable {
     }
 }
 
+//https://api.themoviedb.org/3/genre/movie/list
+nonisolated struct GenreListResponse: Decodable {
+    let genres: [MovieDetails.Genre]
+}
+
+//https://api.themoviedb.org/3/discover/movie
+// Discover results have no media_type and may lack posters/dates, so they get their own lenient type
+nonisolated struct DiscoverResponse: Decodable {
+    let page: Int
+    let total_pages: Int
+    let results: [Movie]
+
+    struct Movie: Decodable {
+        let id: Int
+        let title: String
+        let overview: String
+        let poster_path: String?
+        let release_date: String?
+        let vote_average: Double
+    }
+}
+
 enum VideoType: String{
     case trailer = "Trailer"
     case teaser = "Teaser"
