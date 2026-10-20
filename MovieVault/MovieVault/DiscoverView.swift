@@ -225,13 +225,11 @@ struct SwipeCard: View {
         }
         .aspectRatio(2/3, contentMode: .fit)
         .overlay(alignment: .bottomLeading) { infoOverlay }
-        .overlay(alignment: .topLeading) {
-            stamp("SAVE", color: .green, rotation: -15)
-                .opacity(Double(offset.width / swipeThreshold))
+        .overlay {
+            stamp("heart.fill", color: .green, progress: offset.width / swipeThreshold)
         }
-        .overlay(alignment: .topTrailing) {
-            stamp("SKIP", color: .red, rotation: 15)
-                .opacity(Double(-offset.width / swipeThreshold))
+        .overlay {
+            stamp("xmark", color: .red, progress: -offset.width / swipeThreshold)
         }
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(radius: 6)
@@ -277,14 +275,14 @@ struct SwipeCard: View {
         .background(LinearGradient(colors: [.clear, .black.opacity(0.8)], startPoint: .top, endPoint: .bottom))
     }
 
-    private func stamp(_ text: String, color: Color, rotation: Double) -> some View {
-        Text(text)
-            .font(.title)
-            .fontWeight(.heavy)
+    // Fades in and grows as the card is dragged towards the swipe threshold
+    private func stamp(_ systemImage: String, color: Color, progress: CGFloat) -> some View {
+        let clamped = min(max(progress, 0), 1)
+        return Image(systemName: systemImage)
+            .font(.system(size: 120, weight: .heavy))
             .foregroundColor(color)
-            .padding(.horizontal, 8)
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(color, lineWidth: 4))
-            .rotationEffect(.degrees(rotation))
-            .padding(24)
+            .shadow(color: .black.opacity(0.4), radius: 8)
+            .scaleEffect(0.6 + 0.4 * clamped)
+            .opacity(Double(clamped))
     }
 }
