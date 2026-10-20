@@ -115,6 +115,19 @@ struct Video: Decodable {
     let official: Bool
 }
 
+//https://api.themoviedb.org/3/movie/{movie_id}/recommendations
+// Only the fields the recommendations row needs; poster_path can be null for lesser-known titles
+nonisolated struct MovieRecommendationsResponse: Decodable {
+    let results: [RecommendedMovie]
+
+    struct RecommendedMovie: Decodable {
+        let id: Int
+        let title: String
+        let poster_path: String?
+        let vote_average: Double
+    }
+}
+
 enum VideoType: String{
     case trailer = "Trailer"
     case teaser = "Teaser"
